@@ -51,10 +51,26 @@ class ImproveTranscript(dspy.Signature):
     The output text is used by the TTS model to generate audio. So make sure it is clean for better audio quality.
     - Make sure to remove markers.
     - Return the full text with improved quality.
+    - Improve the markdown 
+    
+    Examples:
+    Input: An easy and proven way to build good habits and break bad ones by James Clear. Copyright © 2018 by James Clear.
+    Output: 
+    Improve transcript: An easy and proven way to build good habits and break bad ones by James Clear.
+    Improve markdown: An easy and proven way to build good habits and break bad ones by *James Clear*.
+    
+    Additional Markdown Instructions:
+    - Convert URLs to markdown links.
+    - Convert email addresses to markdown mailto links.
+    - Convert bold markers (e.g., **text**) to markdown bold.
+    - Convert italic markers (e.g., *text*) to markdown italic.
+    - Ensure proper indentation for nested lists.
+    - Convert headings to appropriate markdown headings (e.g., # for H1, ## for H2).
     """
 
     text: str = dspy.InputField()
-    improved_text: str = dspy.OutputField()
+    improve_transcript: str = dspy.OutputField()
+    improve_markdown: str = dspy.OutputField()
 
 text_improver = dspy.Predict(ImproveTranscript)
 

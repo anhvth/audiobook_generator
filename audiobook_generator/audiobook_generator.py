@@ -64,7 +64,9 @@ class AudioBookGenerator:
         # input is the text, output is the transcript with improved text
         logger.info("Improving transcript...")
         for item in self.items:
-            item["text_transcript"] = text_improver(text=item["text_md"]).improved_text
+            item["improved_text"] = text_improver(text=item["text_md"]).improve_transcript
+            item['text_md'] = text_improver(text=item["text_md"]).improve_markdown
+            logger.info(f"Improved:``` {item['improved_text']}```")
 
     @classmethod
     def from_txt(
