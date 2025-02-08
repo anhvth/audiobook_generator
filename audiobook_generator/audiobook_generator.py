@@ -7,6 +7,7 @@ from pathlib import Path
 
 # --- Import FastHTML and Starlette classes
 from fasthtml.common import *
+from speedy_utils import multi_thread
 from starlette.responses import FileResponse, RedirectResponse
 from starlette.exceptions import HTTPException
 from loguru import logger
@@ -63,10 +64,31 @@ class AudioBookGenerator:
     def improve_transcript(self):
         # input is the text, output is the transcript with improved text
         logger.info("Improving transcript...")
-        for item in self.items:
-            item["improved_text"] = text_improver(text=item["text_md"]).improve_transcript
-            item['text_md'] = text_improver(text=item["text_md"]).improve_markdown
+
+        # for item in self.items:
+        def process_one_item(item):
+            item["improved_text"] = text_improver(
+                text=item["text_md"]
+            ).improve_transcript
+            item["text_md"] = text_improver(text=item["text_md"]).improve_markdown
             logger.info(f"Improved:``` {item['improved_text']}```")
+            return item
+
+        def process_one_item_3times(item):
+            for i in range(3):
+                try:
+                    return process_one_item(item)
+                except Exception as e:
+                    logger.error(f"Failed to process item: {e}, try {i+1}/3")
+            return item
+
+        self.items = multi_thread(
+            process_one_item_3times,
+            self.items,
+            verbose=True,
+            desc="Improving transcript",
+            workers=128,
+        )
 
     @classmethod
     def from_txt(
@@ -88,7 +110,7 @@ class AudioBookGenerator:
         """Generate TTS audio files for each paragraph."""
         pbar = tqdm(self.items, desc="Generating audio", total=len(self.items))
         for item in pbar:
-            preproc_text = item.get('improved_text', item['text'])
+            preproc_text = item.get("improved_text", item["text"])
             logger.info(f"Generating audio from text: {preproc_text[:60]}...")
             item["audio"] = self.text2speech.generate(preproc_text)
         logger.info("All audio files are ready.")
