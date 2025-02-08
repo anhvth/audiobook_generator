@@ -7,6 +7,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "pyperclip",  # For clipboard operations
+        "marker-pdf"
     ],
     author="anhvth",
     author_email="anhvth.226@gmail.com",

@@ -1,8 +1,25 @@
-# audiobook_generator
-pip install https://github.com/anhvth/audiobook_generator.git
+# Audiobook Generator
+
+## Installation
+
+To install the Audiobook Generator, run the following command:
 
 ```bash
-marker_single ~/Downloads/Atomic\ Habits.pdf --use_llm --google_api_key $GOOGLE_API_KEY --output_dir output/full/
+pip install https://github.com/anhvth/audiobook_generator.git
 ```
-export_audiobook --input_path="output/full/Atomic Habits.md" --output_path="output/full/Atomic Habits.mp3" --voice_name="en-US-Wavenet
-conversion_results/Atomic Habits/Atomic Habits.md" output/full/ --book_name="Atomic Habit"
+
+## Usage
+
+To generate an audiobook from a PDF file, use the following command:
+
+```bash
+marker_single /tmp/atomic-hatbits.pdf --use_llm --google_api_key $GOOGLE_API_KEY --output_dir output/full/
+```
+
+To export the generated audiobook, use the following command:
+
+```bash
+mdfile_pattern=output/full/*.md
+mdfile=$(ls $mdfile_pattern)
+export_audiobook $mdfile --book_name="Atomic Habit" -i
+```
