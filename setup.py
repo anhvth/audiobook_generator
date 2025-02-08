@@ -22,7 +22,7 @@ setup(
     python_requires=">=3.6",
     entry_points={
         'console_scripts': [
-            'export_chapter=audiobook_generator.scripts.export_chaper:main',
+            'export_audiobook=audiobook_generator.scripts.export_audiobook:main',
         ],
     },
 )
