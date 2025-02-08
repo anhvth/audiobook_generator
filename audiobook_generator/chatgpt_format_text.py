@@ -4,10 +4,11 @@ import dspy
 from openai import BaseModel
 
 
-lm = dspy.LM("gpt-4o-mini")
+lm = dspy.LM("gpt-4o-mini", max_tokens=4000)
 dspy.configure(lm=lm)
 
-#--- For text processing and TTS
+
+# --- For text processing and TTS
 class MarkdownFormat(dspy.Signature):
     """
     Convert raw paragraph to markdown formatted text.
@@ -20,7 +21,8 @@ class MarkdownFormat(dspy.Signature):
 
 md_formated_llm = dspy.Predict(MarkdownFormat)
 
-#--- For text processing and TTS
+
+# --- For text processing and TTS
 class ParaGraph(BaseModel):
     title: str
     text: str
@@ -42,7 +44,7 @@ class RawTextToParagraphs(dspy.Signature):
 
 
 raw_text_to_paragraphs = dspy.Predict(RawTextToParagraphs)
-#--- Improve transcript
+# --- Improve transcript
 
 
 class ImproveTranscript(dspy.Signature):
@@ -51,14 +53,14 @@ class ImproveTranscript(dspy.Signature):
     The output text is used by the TTS model to generate audio. So make sure it is clean for better audio quality.
     - Make sure to remove markers.
     - Return the full text with improved quality.
-    - Improve the markdown 
-    
+    - Improve the markdown
+
     Examples:
     Input: An easy and proven way to build good habits and break bad ones by James Clear. Copyright © 2018 by James Clear.
-    Output: 
+    Output:
     Improve transcript: An easy and proven way to build good habits and break bad ones by James Clear.
     Improve markdown: An easy and proven way to build good habits and break bad ones by *James Clear*.
-    
+
     Additional Markdown Instructions:
     - Convert URLs to markdown links.
     - Convert email addresses to markdown mailto links.
@@ -72,6 +74,27 @@ class ImproveTranscript(dspy.Signature):
     improve_transcript: str = dspy.OutputField()
     improve_markdown: str = dspy.OutputField()
 
+
 text_improver = dspy.Predict(ImproveTranscript)
 
-__all__ = ["raw_text_to_paragraphs", "md_formated_llm", "text_improver"]
+
+# --- Split text
+class SplitText(dspy.Signature):
+    """
+    Split a long piece of text into a specified number of roughly equal-sized chunks.
+    
+    The splitting process:
+    - Preserves complete sentences and paragraphs where possible
+    - Maintains all original formatting (markdown, lists, etc.)
+    - Avoids splitting in the middle of words or formatting markers
+    - Ensures each chunk is coherent and readable
+    """
+
+    long_text: str = dspy.InputField()
+    target_num_chunks: int = dspy.InputField()
+    output_chunks: list[str] = dspy.OutputField()
+
+
+split_text = dspy.Predict(SplitText)
+
+__all__ = ["raw_text_to_paragraphs", "md_formated_llm", "text_improver", "split_text"]

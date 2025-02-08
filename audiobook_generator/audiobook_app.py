@@ -1,22 +1,65 @@
-# --- Import FastHTML and Starlette classes
+import re
 from fasthtml.common import *
 from starlette.responses import FileResponse, RedirectResponse
 from starlette.exceptions import HTTPException
 from loguru import logger
 
-# --- For text processing and TTS
-
-# --- For image generation
+def extract_headings_and_assign_ids(md_text: str):
+    """
+    1) Looks for lines that start with '#' or '##'.
+    2) Replaces them with <h1> or <h2> (with an auto-generated id).
+    3) Returns:
+       - transformed_md: the updated markdown string (still suitable for MarkdownJS to parse),
+       - headings: a list of (heading_text, heading_id, level).
+    """
+    lines = md_text.splitlines()
+    headings = []
+    new_lines = []
+    for line in lines:
+        # Match lines that begin with # or ##
+        match = re.match(r'^(#{1,2})\s+(.*)$', line)
+        if match:
+            level = len(match.group(1))  # 1 or 2
+            heading_text = match.group(2).strip()
+            # Build an ID (lowercase and replace non-alphanumerics with '-')
+            heading_id = re.sub(r'[^a-zA-Z0-9]+', '-', heading_text.lower()).strip('-')
+            # Save info for building a nav menu
+            headings.append((heading_text, heading_id, level))
+            # Replace the line with actual HTML <h1>/<h2> so we can anchor to it
+            line = f'<h{level} id="{heading_id}">{heading_text}</h{level}>'
+        new_lines.append(line)
+    transformed_md = "\n".join(new_lines)
+    return transformed_md, headings
 
 
 class AudioBookApp:
     def __init__(self, audio_book, book_name):
         self.audio_book = audio_book
         self.book_name = book_name
+
+        # First, parse headings and store them
+        for item in self.audio_book.items:
+            new_md, headings = extract_headings_and_assign_ids(item["text_md"])
+            item["text_md"] = new_md
+            item["headings"] = headings
+
+        # Second, assign each page a "page_title"
+        # If a page has at least one heading, use the first heading’s text.
+        # If it has no headings, inherit the previous page's title (or "Untitled" for page 0).
+        for i, item in enumerate(self.audio_book.items):
+            if item["headings"]:
+                item["page_title"] = item["headings"][0][0]
+            else:
+                if i > 0:
+                    item["page_title"] = self.audio_book.items[i - 1]["page_title"]
+                else:
+                    item["page_title"] = "Untitled"
+
+        # Now build the FastHTML app with updated CSS styles
         self.app, self.rt = fast_app(
             pico=True,
             hdrs=(
-                MarkdownJS(),  # Required for rendering markdown
+                MarkdownJS(),  # So the in-page markdown is rendered in the browser
                 Style(
                     """
 /* ----- Theme Variables ----- */
@@ -64,9 +107,9 @@ body {
     background: var(--header-bg);
     color: var(--header-text);
 }
-.header h1 {
-    margin: 0;
-    font-size: 1.5em;
+.header .logo {
+    font-size: 1.8em;
+    font-weight: bold;
 }
 .theme-toggle {
     display: flex;
@@ -85,16 +128,71 @@ body {
     color: var(--header-bg);
 }
 
-/* Main Content Container with Page-Turning Effect */
-.container {
-    max-width: 800px;
+/* Layout container: side menu + main content */
+.layout {
+    display: flex;
+    gap: 1rem;
     margin: 2em auto;
-    padding: 1.5em;
+    max-width: 1200px;
+    padding: 0 1em;
+}
+
+/* Side menu styling */
+.side-menu {
+    flex: 0 0 250px;
+    background: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 1em;
+    max-height: calc(100vh - 5em);
+    overflow-y: auto;
+}
+
+/* Book info in side menu */
+.book-info {
+    text-align: center;
+    margin-bottom: 1em;
+}
+.book-info h2 {
+    font-size: 1.6em;
+    margin: 0;
+}
+
+/* Nearby pages list styling */
+.chapter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.chapter-list li {
+    margin: 0.5em 0;
+    padding: 0.3em;
+    border-radius: 4px;
+}
+.chapter-list li:hover {
+    background: var(--link-secondary-bg);
+}
+.chapter-list li.active {
+    font-weight: bold;
+    background: var(--link-primary-bg);
+    color: var(--link-primary-text);
+}
+
+/* Headings for sections in side menu */
+.side-menu h3 {
+    font-size: 1.2em;
+    margin: 1em 0 0.5em;
+}
+
+/* Main content container with page-turn animation */
+.main-content {
+    flex: 1;
     background: var(--container-bg);
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     animation: pageTurn 0.8s ease;
     transform-style: preserve-3d;
+    padding: 1.5em;
 }
 
 /* Page Turning Animation */
@@ -122,23 +220,28 @@ audio {
     margin: 1em auto;
 }
 
-/* Navigation Buttons */
-nav a {
+/* Next/Prev Navigation Buttons */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2em;
+}
+.nav a {
     font-size: 1.1em;
     text-decoration: none;
     padding: 0.5em 1em;
     border-radius: 4px;
     transition: background 0.3s;
 }
-nav a.secondary {
+.nav a.secondary {
     background: var(--link-secondary-bg);
     color: var(--link-secondary-text);
 }
-nav a.primary {
+.nav a.primary {
     background: var(--link-primary-bg);
     color: var(--link-primary-text);
 }
-nav a:hover {
+.nav a:hover {
     opacity: 0.8;
 }
 
@@ -149,7 +252,6 @@ nav a:hover {
                     """
 function setTheme(theme) {
     if (theme === 'auto') {
-        // Auto-detect based on prefers-color-scheme
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.body.className = 'dark';
         } else {
@@ -161,18 +263,16 @@ function setTheme(theme) {
     localStorage.setItem('theme', theme);
     updateThemeToggle(theme);
 }
-
 function updateThemeToggle(theme) {
     var buttons = document.querySelectorAll('.theme-toggle button');
     buttons.forEach(function(btn) {
-         if(btn.textContent.toLowerCase() === theme) {
+         if (btn.textContent.toLowerCase() === theme) {
               btn.classList.add('active');
          } else {
               btn.classList.remove('active');
          }
     });
 }
-
 window.addEventListener('load', function(){
     var storedTheme = localStorage.getItem('theme') || 'auto';
     setTheme(storedTheme);
@@ -186,12 +286,10 @@ window.addEventListener('load', function(){
         self.setup_routes()
 
     def setup_routes(self):
-        # Home route simply redirects to page "0"
         @self.rt("/")
         def home():
             return RedirectResponse("/0")
 
-        # Static assets – these will be copied in the export process
         @self.rt("/assets/{fname:path}")
         def static_assets(fname: str):
             path = self.audio_book.assets_dir / fname
@@ -201,7 +299,6 @@ window.addEventListener('load', function(){
             logger.error(f"File not found: {path}")
             raise HTTPException(status_code=404, detail="File not found")
 
-        # Page route: show the audiobook page for the given index.
         @self.rt("/{idx:int}")
         def page(idx: int):
             if not 0 <= idx < len(self.audio_book.items):
@@ -209,47 +306,101 @@ window.addEventListener('load', function(){
                 raise HTTPException(status_code=404, detail="Page not found")
 
             item = self.audio_book.items[idx]
-            # Use NotStr() so that the pre-formatted markdown is rendered as HTML.
-            # Using 'marked' class so MarkdownJS() can process it in the browser.
-            text_markdown = Div(NotStr(item["text_md"]), cls="markdown marked")
 
-            # If an image is generated or provided, display it
+            # -----------------------------------------------
+            # 1) Build the side menu with improved UI
+            # -----------------------------------------------
+
+            # Book info section at the top of the side menu
+            book_info = Div(
+                H2(self.book_name, style="margin:0;"),
+                ft_hx("hr"),
+                cls="book-info"
+            )
+
+            # Build a list of nearby pages (5 before and 5 after)
+            start_idx = max(0, idx - 5)
+            end_idx = min(len(self.audio_book.items), idx + 6)
+            chapter_list_items = []
+            for p in range(start_idx, end_idx):
+                # Always show the page number for clarity
+                display_text = f"{self.audio_book.items[p]['page_title']} (Page {p+1})"
+                li = Li(A(display_text, href=f"/{p}"))
+                if p == idx:
+                    li.attrs["class"] = "active"
+                chapter_list_items.append(li)
+            chapter_list = Ul(*chapter_list_items, cls="chapter-list")
+
+            nearby_section = Div(
+                H3("Nearby Pages"),
+                chapter_list
+            )
+
+            # Build the table of contents from in-page headings
+            headings = item.get("headings", [])
+            if headings:
+                toc_links = []
+                for text, hid, level in headings:
+                    indent = "margin-left:1em;" if level == 2 else ""
+                    toc_links.append(A(text, href=f"#{hid}", style=indent))
+                toc_section = Div(
+                    H3("Contents"),
+                    Div(*toc_links)
+                )
+            else:
+                toc_section = Div(H3("Contents"), Div("No headings found."))
+
+            # Combine the book info, nearby pages and TOC into the side menu
+            side_menu = Div(
+                book_info,
+                nearby_section,
+                ft_hx("hr"),
+                toc_section,
+                cls="side-menu"
+            )
+
+            # -----------------------------------------------
+            # 2) Build the main content area
+            # -----------------------------------------------
             image_content = Div()
             if "image" in item:
                 image_content = ft_hx(
                     "img",
                     src=f"/assets/{item['image']}",
                     alt="Generated Image",
-                    style="max-width:100%; margin-bottom:1em;",
+                    style="max-width:100%; margin-bottom:1em;"
                 )
 
-            # The audio player: note the src uses "/assets/...", which is post-processed in export.
-            audio_player = ft_hx(
-                "audio", controls=True, autoplay=True, src=f"/assets/{item['audio']}"
-            )
-
+            text_markdown = Div(NotStr(item["text_md"]), cls="markdown marked")
+            audio_player = ft_hx("audio", controls=True, autoplay=True, src=f"/assets/{item['audio']}")
             nav_links = self._create_navigation(idx)
-            navigation = Div(
-                *nav_links,
-                cls="nav",
-                style="display:flex; justify-content:space-between; margin-top:1em;",
+            navigation = Div(*nav_links, cls="nav")
+            main_content = Div(
+                image_content,
+                text_markdown,
+                audio_player,
+                navigation,
+                cls="main-content"
             )
 
+            layout_div = Div(side_menu, main_content, cls="layout")
+
+            # Top header bar with logo and theme toggle buttons
             header_div = Div(
-                H1(self.book_name),
+                Div(self.book_name, cls="logo"),
                 Div(
                     Button("Light", onclick="setTheme('light');"),
                     Button("Dark", onclick="setTheme('dark');"),
                     Button("Auto", onclick="setTheme('auto');"),
-                    cls="theme-toggle",
+                    cls="theme-toggle"
                 ),
-                cls="header",
+                cls="header"
             )
-            content = Div(
-                image_content, text_markdown, audio_player, navigation, cls="container"
-            )
+
             return Titled(
-                f"Page {idx+1} of {len(self.audio_book.items)}", header_div, content
+                f"Page {idx+1} of {len(self.audio_book.items)}",
+                header_div,
+                layout_div
             )
 
     def _create_navigation(self, idx):
@@ -261,5 +412,4 @@ window.addEventListener('load', function(){
         return nav
 
     def run(self):
-        # In the export version we do not call serve(), but instead use export logic.
         serve()
