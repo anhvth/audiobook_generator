@@ -67,11 +67,16 @@ class AudioBookGenerator:
 
         # for item in self.items:
         def process_one_item(item):
-            item["improved_text"] = text_improver(
-                text=item["text_md"]
-            ).improve_transcript
-            item["text_md"] = text_improver(text=item["text_md"]).improve_markdown
-            logger.info(f"Improved:``` {item['improved_text']}```")
+            try:
+                item["improved_text"] = text_improver(
+                    text=item["text_md"]
+                ).improve_transcript
+                item["text_md"] = text_improver(text=item["text_md"]).improve_markdown
+                logger.info(f"Improved:``` {item['improved_text'][:60]}...```")
+            except Exception as e:
+                logger.error(f"Failed to improve item: {e}")
+                item["improved_text"] = item["text_md"]
+                item["text_md"] = item["text_md"]
             return item
 
         def process_one_item_3times(item):

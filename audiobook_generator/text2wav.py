@@ -54,6 +54,7 @@ class TextToSpeech:
         # Collect all audio chunks
         all_audio = []
         for _, _, audio in generator:
+            import ipdb; ipdb.set_trace()
             all_audio.append(audio)
         assert all_audio, "No audio chunks generated"
         # Concatenate all audio chunks
