@@ -49,25 +49,33 @@ raw_text_to_paragraphs = dspy.Predict(RawTextToParagraphs)
 
 class ImproveTranscript(dspy.Signature):
     """
-    Improve transcript by removing redundant or markers.
-    The output text is used by the TTS model to generate audio. So make sure it is clean for better audio quality.
-    - Make sure to remove markers.
-    - Return the full text with improved quality.
-    - Improve the markdown
+    Two main tasks: clean transcript for TTS and format markdown for readability.
+
+    1. Transcript Improvement:
+    - Remove all formatting markers (*, #, -, etc.)
+    - Remove redundant text like copyright notices
+    - Clean up extra spaces and newlines
+    - Keep only the essential content for clear audio narration
+    - Remove any text in parentheses with citations or references
+    - Replace abbreviations with full words (e.g., "Dr." to "Doctor")
+
+    2. Markdown Formatting:
+    - Format titles with # (main) or ## (subtitles)
+    - Emphasize author names with *italic*
+    - Format quotes with > blockquotes
+    - Create proper bullet lists with *
+    - Use numbered lists with 1. 2. 3.
+    - Format URLs as [text](url)
+    - Format emails as [email](mailto:email)
+    - Use **bold** for important concepts
+    - Add horizontal rules (---) between major sections
 
     Examples:
     Input: An easy and proven way to build good habits and break bad ones by James Clear. Copyright © 2018 by James Clear.
     Output:
     Improve transcript: An easy and proven way to build good habits and break bad ones by James Clear.
-    Improve markdown: An easy and proven way to build good habits and break bad ones by *James Clear*.
-
-    Additional Markdown Instructions:
-    - Convert URLs to markdown links.
-    - Convert email addresses to markdown mailto links.
-    - Convert bold markers (e.g., **text**) to markdown bold.
-    - Convert italic markers (e.g., *text*) to markdown italic.
-    - Ensure proper indentation for nested lists.
-    - Convert headings to appropriate markdown headings (e.g., # for H1, ## for H2).
+    Improve markdown: # An easy and proven way to build good habits and break bad ones
+    By *James Clear*
     """
 
     text: str = dspy.InputField()

@@ -83,7 +83,7 @@ class TextToSpeech:
             return generator
 
         if not self.pipeline:
-            self.pipeline = KPipeline(lang_code=self.config.LANG_CODE)
+            self.initialize_pipeline()
 
         generator = _generate_audio(text, self.config.VOICE, self.config.SPEED)
         output_path.parent.mkdir(exist_ok=True)
@@ -113,3 +113,6 @@ class TextToSpeech:
             raise ValueError(f"Unsupported format: {format}")
 
         return f"{id}.{format}"
+
+    def initialize_pipeline(self):
+        self.pipeline = KPipeline(lang_code=self.config.LANG_CODE)

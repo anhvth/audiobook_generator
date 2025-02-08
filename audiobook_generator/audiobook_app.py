@@ -1,9 +1,13 @@
 import re
-from fasthtml.common import *
 from starlette.responses import FileResponse, RedirectResponse
 from starlette.exceptions import HTTPException
 from loguru import logger
 
+# Adjusted imports to bring in UI components explicitly
+# from fasthtml.common import fast_app, serve, NotStr, ft_hx, MarkdownJS, Style, Script
+from fasthtml.common import *
+# from fasthtml import *
+# .ui import Titled, Div, A, Li, Ul, H2, H3, Button
 def extract_headings_and_assign_ids(md_text: str):
     """
     1) Looks for lines that start with '#' or '##'.
@@ -174,8 +178,8 @@ body {
 }
 .chapter-list li.active {
     font-weight: bold;
-    background: var(--link-primary-bg);
-    color: var(--link-primary-text);
+    background: #5c6d70;  /* changed */
+    color: #fff5e1;       /* changed */
 }
 
 /* Headings for sections in side menu */
@@ -273,9 +277,54 @@ function updateThemeToggle(theme) {
          }
     });
 }
+
+// Add keyboard navigation and volume control
+document.addEventListener('keydown', function(e) {
+    const audio = document.querySelector('audio');
+    
+    switch(e.key) {
+        case 'ArrowRight':
+        case ' ':  // spacebar
+            const nextBtn = document.querySelector('.nav a.primary');
+            if (nextBtn) nextBtn.click();
+            break;
+            
+        case 'ArrowLeft':
+            const prevBtn = document.querySelector('.nav a.secondary');
+            if (prevBtn) prevBtn.click();
+            break;
+            
+        case 'ArrowUp':
+            if (audio) {
+                audio.volume = Math.min(1, audio.volume + 0.1);
+                e.preventDefault();
+            }
+            break;
+            
+        case 'ArrowDown':
+            if (audio) {
+                audio.volume = Math.max(0, audio.volume - 0.1);
+                e.preventDefault();
+            }
+            break;
+    }
+});
+
 window.addEventListener('load', function(){
     var storedTheme = localStorage.getItem('theme') || 'auto';
     setTheme(storedTheme);
+    
+    // Add page turn animation class when navigating
+    document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.getAttribute('href');
+            document.querySelector('.main-content').style.animation = 'pageTurn 0.8s ease';
+            setTimeout(() => {
+                window.location.href = href;
+            }, 400);
+        });
+    });
 });
                     """
                 ),
@@ -308,10 +357,8 @@ window.addEventListener('load', function(){
             item = self.audio_book.items[idx]
 
             # -----------------------------------------------
-            # 1) Build the side menu with improved UI
+            # 1) Build the side menu
             # -----------------------------------------------
-
-            # Book info section at the top of the side menu
             book_info = Div(
                 H2(self.book_name, style="margin:0;"),
                 ft_hx("hr"),
@@ -323,7 +370,6 @@ window.addEventListener('load', function(){
             end_idx = min(len(self.audio_book.items), idx + 6)
             chapter_list_items = []
             for p in range(start_idx, end_idx):
-                # Always show the page number for clarity
                 display_text = f"{self.audio_book.items[p]['page_title']} (Page {p+1})"
                 li = Li(A(display_text, href=f"/{p}"))
                 if p == idx:
@@ -348,9 +394,11 @@ window.addEventListener('load', function(){
                     Div(*toc_links)
                 )
             else:
-                toc_section = Div(H3("Contents"), Div("No headings found."))
+                toc_section = Div(
+                    H3("Contents"),
+                    Div("No headings found.")
+                )
 
-            # Combine the book info, nearby pages and TOC into the side menu
             side_menu = Div(
                 book_info,
                 nearby_section,
@@ -375,6 +423,7 @@ window.addEventListener('load', function(){
             audio_player = ft_hx("audio", controls=True, autoplay=True, src=f"/assets/{item['audio']}")
             nav_links = self._create_navigation(idx)
             navigation = Div(*nav_links, cls="nav")
+
             main_content = Div(
                 image_content,
                 text_markdown,
@@ -385,7 +434,6 @@ window.addEventListener('load', function(){
 
             layout_div = Div(side_menu, main_content, cls="layout")
 
-            # Top header bar with logo and theme toggle buttons
             header_div = Div(
                 Div(self.book_name, cls="logo"),
                 Div(

@@ -55,7 +55,6 @@ class AudioBookGenerator:
         pages: List[str] = chunk_into_pages(file.read())
         items = [{"text": p} for p in pages]
         if page_rage:
-            # import ipdb; ipdb.set_trace()
             items = items[page_rage[0] : page_rage[1]]
 
         logger.info(f"Loaded {len(items)} pages from {md_file}")
@@ -108,16 +107,28 @@ class AudioBookGenerator:
         raw_text = open(input_file, encoding="utf-8").read()
         logger.info("Converting raw text to paragraphs...")
         paragraphs = raw_text_to_paragraphs(raw_text=raw_text).paragraphs
-        items = [{"text": p.text} for i, p in enumerate(paragraphs) if len(p.text) > 50]
+        items = [
+            {"text": p.text, "title": p.title}
+            for i, p in enumerate(paragraphs)
+            if len(p.text) > 50
+        ]
         return cls(items, assets_dir, with_image)
 
     def generate_audio(self):
         """Generate TTS audio files for each paragraph."""
-        pbar = tqdm(self.items, desc="Generating audio", total=len(self.items))
-        for item in pbar:
+        self.text2speech.initialize_pipeline()
+
+        def f(item):
             preproc_text = item.get("improved_text", item["text"])
             logger.info(f"Generating audio from text: {preproc_text[:60]}...")
-            item["audio"] = self.text2speech.generate(preproc_text)
+            return self.text2speech.generate(preproc_text)
+
+        audios = multi_thread(
+            f, self.items, verbose=True, desc="Generating audio", workers=8
+        )
+        for idx, audio in enumerate(audios):
+            item = self.items[idx]
+            item["audio"] = audio
         logger.info("All audio files are ready.")
 
     def generate_images(self):
