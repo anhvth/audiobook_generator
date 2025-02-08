@@ -28,9 +28,49 @@ class TextToSpeech:
             config = Config()
         self.config = config
         self.pipeline = None
-
+    def preprocess(self, text: str):
+        text = text.lower()
+        special_characters = {
+            "’": "'",
+            "‘": "'",
+            "&": "",
+            "@": "",
+            "#": "",
+            "$": "",
+            "%": "",
+            "^": "",
+            "*": "",
+            "(": "",
+            ")": "",
+            "-": "",
+            "_": "",
+            "=": "",
+            "+": "",
+            "{": "",
+            "}": "",
+            "[": "",
+            "]": "",
+            "|": "",
+            "\\": "",
+            ":": "",
+            ";": "",
+            "\"": "",
+            "<": "",
+            ">": "",
+            ",": "",
+            ".": "",
+            "?": "",
+            "/": "",
+            "!": "",
+            "`": "",
+            "~": "",
+            "·": "",
+        }
+        for char, replacement in special_characters.items():
+            text = text.replace(char, replacement)
+        return text
     def generate(self, text: str):
-
+        text = self.preprocess(text)
         id = identify([text, self.config.VOICE, self.config.SPEED])
         output_path = Path(f"assets/{id}.wav")
         if output_path.exists():
@@ -55,7 +95,8 @@ class TextToSpeech:
         all_audio = []
         for _, _, audio in generator:
             all_audio.append(audio)
-        assert all_audio, "No audio chunks generated"
+        if not all_audio:
+            return
         # Concatenate all audio chunks
         final_audio = torch.cat(all_audio, dim=0).numpy()
 
