@@ -16,6 +16,7 @@ from tqdm import tqdm
 from audiobook_generator.chatgpt_format_text import (
     raw_text_to_paragraphs,
     md_formated_llm,
+    text_improver,
 )
 from audiobook_generator.chunk_to_pages import chunk_into_pages
 from audiobook_generator.text2wav import TextToSpeech
@@ -48,12 +49,22 @@ class AudioBookGenerator:
                 item["text_md"] = item["text"]
 
     @classmethod
-    def from_large_md(cls, md_file):
+    def from_large_md(cls, md_file, page_rage):
         file = open(md_file, "r")
         pages: List[str] = chunk_into_pages(file.read())
-        items = [{"text": p} for p in pages][:5]
+        items = [{"text": p} for p in pages]
+        if page_rage:
+            # import ipdb; ipdb.set_trace()
+            items = items[page_rage[0] : page_rage[1]]
+
         logger.info(f"Loaded {len(items)} pages from {md_file}")
         return cls(items, assets_dir="assets", with_image=False, to_md=False)
+
+    def improve_transcript(self):
+        # input is the text, output is the transcript with improved text
+        logger.info("Improving transcript...")
+        for item in self.items:
+            item["text_transcript"] = text_improver(text=item["text_md"]).improved_text
 
     @classmethod
     def from_txt(
@@ -75,7 +86,7 @@ class AudioBookGenerator:
         """Generate TTS audio files for each paragraph."""
         pbar = tqdm(self.items, desc="Generating audio", total=len(self.items))
         for item in pbar:
-            preproc_text = item["text"].replace("\n", " ")
+            preproc_text = item.get('improved_text', item['text'])
             logger.info(f"Generating audio from text: {preproc_text[:60]}...")
             item["audio"] = self.text2speech.generate(preproc_text)
         logger.info("All audio files are ready.")

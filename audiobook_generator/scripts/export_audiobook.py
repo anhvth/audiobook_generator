@@ -1,30 +1,3 @@
-#!/usr/bin/env python
-# File: export.py
-"""
-export.py – Export the AudioBookApp as a static website, optionally generating images for each page.
-
-Usage:
-    python export.py <input_file> <output_directory> [--with_image]
-
-Arguments:
-    <input_file>        Path to the text file containing the audiobook content
-    <output_directory>  Path to the directory where the static site will be generated
-
-Options:
-    --with_image        If provided, will attempt to generate an image for each page using the OpenAI API.
-
-When run (for example “python export.py data/input.txt chapter1/ --with_image”) it:
-  • Instantiates the AudioBookGenerator to load and generate audio files.
-  • If --with_image is provided, also calls the OpenAI Image Generation API for each page to generate an image.
-  • Instantiates the AudioBookApp (which builds routes for page “/0”, “/1”, etc.)
-  • Uses Starlette’s TestClient to get the rendered HTML for each page.
-  • Fixes the generated URLs so that href="/0" becomes "index.html" for page 0 and "1.html" for page 1, etc.
-  • Writes each page into the output folder.
-  • Copies the assets (such as audio files and/or images) to an "assets" subfolder.
-  
-After exporting, opening the output folder’s index.html will display your audiobook (and images if generated).
-"""
-
 import argparse
 import re
 import shutil
@@ -36,8 +9,6 @@ from fasthtml.common import *
 # --- For text processing and TTS
 from audiobook_generator.audiobook_app import AudioBookApp
 from audiobook_generator.audiobook_generator import AudioBookGenerator
-
-# --- For image generation
 
 
 def main():
@@ -57,6 +28,15 @@ def main():
         default="AudioBook",
         help="Name of the book to display in the browser tab",
     )
+    parser.add_argument(
+        "--page_range", nargs=2, type=int, help="Range of pages to export"
+    )
+    parser.add_argument(
+        "--improve_transcript",
+        "-i",
+        action="store_true",
+        help="Use llm to improve transcript by removing redundant or markers",
+    )
     args = parser.parse_args()
     output_dir = Path(args.output_directory)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -64,10 +44,11 @@ def main():
 
     # Instantiate and prepare the audiobook
     if args.input_file.endswith(".md"):
-        audio_book = AudioBookGenerator.from_large_md(args.input_file)
+        audio_book = AudioBookGenerator.from_large_md(args.input_file, args.page_range)
     else:
         audio_book = AudioBookGenerator.from_txt(args.input_file)
-    # audio_book.load_text()
+    if args.improve_transcript:
+        audio_book.improve_transcript()
     audio_book.generate_audio()
 
     # If user wants images, generate them now
@@ -87,7 +68,16 @@ def main():
     print(f"Found {num_pages} page(s) to export.")
 
     # For each page route, fetch HTML and post-process links so they work as static files.
+    def is_in_range(page_range, idx):
+        if not page_range:
+            return True
+
+        return page_range[0] <= idx < page_range[1]
+
     for idx in range(num_pages):
+        if not is_in_range(args.page_range, idx):
+            continue
+
         route = f"/{idx}"
         response = client.get(route)
         html = response.text

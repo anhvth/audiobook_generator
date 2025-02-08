@@ -23,8 +23,10 @@ class Config:
 
 
 class TextToSpeech:
-    def __init__(self):
-        self.config = Config()
+    def __init__(self, config: Config = None):
+        if config is None:
+            config = Config()
+        self.config = config
         self.pipeline = None
 
     def generate(self, text: str):

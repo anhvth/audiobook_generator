@@ -42,6 +42,20 @@ class RawTextToParagraphs(dspy.Signature):
 
 
 raw_text_to_paragraphs = dspy.Predict(RawTextToParagraphs)
+#--- Improve transcript
 
 
-__all__ = ["raw_text_to_paragraphs", "md_formated_llm"]
+class ImproveTranscript(dspy.Signature):
+    """
+    Improve transcript by removing redundant or markers.
+    The output text is used by the TTS model to generate audio. So make sure it is clean for better audio quality.
+    - Make sure to remove markers.
+    - Return the full text with improved quality.
+    """
+
+    text: str = dspy.InputField()
+    improved_text: str = dspy.OutputField()
+
+text_improver = dspy.Predict(ImproveTranscript)
+
+__all__ = ["raw_text_to_paragraphs", "md_formated_llm", "text_improver"]
