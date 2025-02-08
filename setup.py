@@ -9,7 +9,7 @@ setup(
         "pyperclip",  # For clipboard operations
     ],
     author="anhvth",
-    author_email="your.email@example.com",
+    author_email="anhvth.226@gmail.com",
     description="A tool to read clipboard content",
     long_description=open("README.md").read() if os.path.exists("README.md") else "",
     long_description_content_type="text/markdown",
@@ -22,7 +22,7 @@ setup(
     python_requires=">=3.6",
     entry_points={
         'console_scripts': [
-            'export_chapter=read_my_clipboard.export_chapter:main',
+            'export_chapter=audiobook_generator.scripts.export_chaper:main',
         ],
     },
 )
