@@ -6,6 +6,8 @@ import soundfile as sf
 import torch
 from kokoro import KPipeline
 from speedy_utils import identify, memoize
+import pydub
+from pydub import AudioSegment
 
 
 @dataclass
@@ -29,7 +31,7 @@ class TextToSpeech:
         self.config = config
         self.pipeline = None
     def preprocess(self, text: str):
-        text = text.lower()
+        # text = text.lower()
         special_characters = {
             "’": "'",
             "‘": "'",
@@ -40,41 +42,36 @@ class TextToSpeech:
             "%": "",
             "^": "",
             "*": "",
-            "(": "",
-            ")": "",
-            "-": "",
-            "_": "",
-            "=": "",
-            "+": "",
-            "{": "",
-            "}": "",
-            "[": "",
-            "]": "",
-            "|": "",
-            "\\": "",
-            ":": "",
-            ";": "",
-            "\"": "",
-            "<": "",
-            ">": "",
-            ",": "",
-            ".": "",
-            "?": "",
-            "/": "",
-            "!": "",
-            "`": "",
-            "~": "",
-            "·": "",
+            # "(": "",
+            # ")": "",
+            # "-": "",
+            # "_": "",
+            # "+": "",
+            # "{": "",
+            # "}": "",
+            # "[": "",
+            # "]": "",
+            # "|": "",
+            # "\\": "",
+            # ":": "",
+            # ";": "",
+            # "\"": "",
+            # "<": "",
+            # ">": "",
+            # "!": "",
+            # "`": "",
+            # "~": "",
+            # "·": "",
         }
         for char, replacement in special_characters.items():
             text = text.replace(char, replacement)
         return text
-    def generate(self, text: str):
+    def generate(self, text: str, format: str = "wav"):
         text = self.preprocess(text)
         id = identify([text, self.config.VOICE, self.config.SPEED])
-        output_path = Path(f"assets/{id}.wav")
+        output_path = Path(f"assets/{id}.{format}")
         if output_path.exists():
-            return f"{id}.wav"
+            return f"{id}.{format}"
 
         def _generate_audio(text, voice, speed):
             generator = self.pipeline(
@@ -91,15 +88,28 @@ class TextToSpeech:
         generator = _generate_audio(text, self.config.VOICE, self.config.SPEED)
         output_path.parent.mkdir(exist_ok=True)
 
-        # Collect all audio chunks
         all_audio = []
         for _, _, audio in generator:
             all_audio.append(audio)
         if not all_audio:
             return
-        # Concatenate all audio chunks
+
         final_audio = torch.cat(all_audio, dim=0).numpy()
 
-        # Write the complete audio to file
-        sf.write(str(output_path), final_audio, self.config.SAMPLE_RATE)
-        return f"{id}.wav"
+        if format == "wav":
+            sf.write(str(output_path), final_audio, self.config.SAMPLE_RATE)
+        elif format == "mp3":
+            audio_segment = AudioSegment(
+                final_audio.tobytes(),
+                frame_rate=self.config.SAMPLE_RATE,
+                sample_width=final_audio.dtype.itemsize,
+                channels=1
+            )
+            # audio_segment.export(str(output_path), format="mp3", bitrate="192k")
+            audio_segment.export('new.mp3', format='mp3')#, codec='mp3')
+
+
+        else:
+            raise ValueError(f"Unsupported format: {format}")
+
+        return f"{id}.{format}"

@@ -7,7 +7,10 @@ setup(
     packages=find_packages(),
     install_requires=[
         "pyperclip",  # For clipboard operations
-        "marker-pdf"
+        "marker-pdf",
+        "python-fasthtml",
+        "kokoro",
+        "ffmpeg-python",  # Added ffmpeg
     ],
     author="anhvth",
     author_email="anhvth.226@gmail.com",
@@ -22,8 +25,8 @@ setup(
     ],
     python_requires=">=3.6",
     entry_points={
-        'console_scripts': [
-            'export_audiobook=audiobook_generator.scripts.export_audiobook:main',
+        "console_scripts": [
+            "export_audiobook=audiobook_generator.scripts.export_audiobook:main",
         ],
     },
 )
