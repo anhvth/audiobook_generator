@@ -9,6 +9,8 @@ from speedy_utils import identify, memoize
 import pydub
 from pydub import AudioSegment
 
+from audiobook_generator.wav_to_mp3 import wav_to_mp3
+
 
 @dataclass
 class Config:
@@ -30,6 +32,7 @@ class TextToSpeech:
             config = Config()
         self.config = config
         self.pipeline = None
+
     def preprocess(self, text: str):
         # text = text.lower()
         special_characters = {
@@ -66,10 +69,11 @@ class TextToSpeech:
         for char, replacement in special_characters.items():
             text = text.replace(char, replacement)
         return text
+
     def generate(self, text: str, format: str = "wav"):
         text = self.preprocess(text)
         id = identify([text, self.config.VOICE, self.config.SPEED])
-        output_path = Path(f"assets/{id}.{format}")
+        output_path = Path(f"assets/{id}.wav")
         if output_path.exists():
             return f"{id}.{format}"
 
@@ -96,18 +100,10 @@ class TextToSpeech:
 
         final_audio = torch.cat(all_audio, dim=0).numpy()
 
-        if format == "wav":
-            sf.write(str(output_path), final_audio, self.config.SAMPLE_RATE)
-        elif format == "mp3":
-            audio_segment = AudioSegment(
-                final_audio.tobytes(),
-                frame_rate=self.config.SAMPLE_RATE,
-                sample_width=final_audio.dtype.itemsize,
-                channels=1
-            )
-            # audio_segment.export(str(output_path), format="mp3", bitrate="192k")
-            audio_segment.export('new.mp3', format='mp3')#, codec='mp3')
-
+        # if format == "wav":
+        sf.write(str(output_path), final_audio, self.config.SAMPLE_RATE)
+        if format == "mp3":
+            wav_to_mp3(str(output_path), str(output_path.with_suffix(".mp3")))
 
         else:
             raise ValueError(f"Unsupported format: {format}")
