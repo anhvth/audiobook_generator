@@ -7,7 +7,7 @@ To install the Audiobook Generator, run the following command:
 ```bash
 sudo apt-get update
 sudo apt-get install -y ffmpeg
-pip install https://github.com/anhvth/audiobook_generator.git
+pip install https://github.com/anhvth/audiobook_generator.git speedy_utils
 ```
 
 ## Usage

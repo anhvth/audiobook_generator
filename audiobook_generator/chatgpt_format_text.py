@@ -1,10 +1,13 @@
+import os
 import dspy
 from openai import BaseModel
 import dspy
 from openai import BaseModel
+from loguru import logger
 
-
-lm = dspy.LM("gpt-4o-mini", max_tokens=4000)
+model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+logger.info(f"Using model: {model}, to change set the LLM_MODEL environment variable.")
+lm = dspy.LM(model, max_tokens=4000)
 dspy.configure(lm=lm)
 
 
@@ -95,7 +98,9 @@ from pydantic import Field
 class ChunkFormat(BaseModel):
 
     title: str = Field(description="The title of the chunk.")
-    text: str = Field(description="The formated text. Should be 300-500 words for optimal TTS processing.")
+    text: str = Field(
+        description="The formated text. Should be 300-500 words for optimal TTS processing."
+    )
 
 
 class SplitText(dspy.Signature):
