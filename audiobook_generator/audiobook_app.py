@@ -6,6 +6,8 @@ from loguru import logger
 # Adjusted imports to bring in UI components explicitly
 # from fasthtml.common import fast_app, serve, NotStr, ft_hx, MarkdownJS, Style, Script
 from fasthtml.common import *
+
+
 # from fasthtml import *
 # .ui import Titled, Div, A, Li, Ul, H2, H3, Button
 def extract_headings_and_assign_ids(md_text: str):
@@ -21,12 +23,12 @@ def extract_headings_and_assign_ids(md_text: str):
     new_lines = []
     for line in lines:
         # Match lines that begin with # or ##
-        match = re.match(r'^(#{1,2})\s+(.*)$', line)
+        match = re.match(r"^(#{1,2})\s+(.*)$", line)
         if match:
             level = len(match.group(1))  # 1 or 2
             heading_text = match.group(2).strip()
             # Build an ID (lowercase and replace non-alphanumerics with '-')
-            heading_id = re.sub(r'[^a-zA-Z0-9]+', '-', heading_text.lower()).strip('-')
+            heading_id = re.sub(r"[^a-zA-Z0-9]+", "-", heading_text.lower()).strip("-")
             # Save info for building a nav menu
             headings.append((heading_text, heading_id, level))
             # Replace the line with actual HTML <h1>/<h2> so we can anchor to it
@@ -178,8 +180,8 @@ body {
 }
 .chapter-list li.active {
     font-weight: bold;
-    background: #5c6d70;  /* changed */
-    color: #fff5e1;       /* changed */
+    background: #5c6d70;
+    color: #fff5e1;
 }
 
 /* Headings for sections in side menu */
@@ -250,7 +252,49 @@ audio {
 }
 
 /* ----- Theme Toggle Script ----- */
-                    """
+/* (Script remains unchanged) */
+
+/* ----- Responsive Styles for Phones ----- */
+@media screen and (max-width: 768px) {
+    /* Stack side-menu and main-content vertically */
+    .layout {
+        flex-direction: column;
+        margin: 1em auto;
+        padding: 0.5em;
+    }
+    .side-menu {
+        flex: none;
+        width: 100%;
+        max-height: none;
+        margin-bottom: 1em;
+    }
+    .main-content {
+        width: 100%;
+        padding: 1em;
+    }
+    /* Adjust header for smaller screens */
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .header .logo {
+        font-size: 1.5em;
+        margin-bottom: 0.5em;
+    }
+    /* Optionally adjust nav button sizes */
+    .nav a {
+        font-size: 1em;
+        padding: 0.5em;
+    }
+}
+
+/* For very small screens */
+@media screen and (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+}
+    """
                 ),
                 Script(
                     """
@@ -360,9 +404,7 @@ window.addEventListener('load', function(){
             # 1) Build the side menu
             # -----------------------------------------------
             book_info = Div(
-                H2(self.book_name, style="margin:0;"),
-                ft_hx("hr"),
-                cls="book-info"
+                H2(self.book_name, style="margin:0;"), ft_hx("hr"), cls="book-info"
             )
 
             # Build a list of nearby pages (5 before and 5 after)
@@ -377,10 +419,7 @@ window.addEventListener('load', function(){
                 chapter_list_items.append(li)
             chapter_list = Ul(*chapter_list_items, cls="chapter-list")
 
-            nearby_section = Div(
-                H3("Nearby Pages"),
-                chapter_list
-            )
+            nearby_section = Div(H3("Nearby Pages"), chapter_list)
 
             # Build the table of contents from in-page headings
             headings = item.get("headings", [])
@@ -389,22 +428,12 @@ window.addEventListener('load', function(){
                 for text, hid, level in headings:
                     indent = "margin-left:1em;" if level == 2 else ""
                     toc_links.append(A(text, href=f"#{hid}", style=indent))
-                toc_section = Div(
-                    H3("Contents"),
-                    Div(*toc_links)
-                )
+                toc_section = Div(H3("Contents"), Div(*toc_links))
             else:
-                toc_section = Div(
-                    H3("Contents"),
-                    Div("No headings found.")
-                )
+                toc_section = Div(H3("Contents"), Div("No headings found."))
 
             side_menu = Div(
-                book_info,
-                nearby_section,
-                ft_hx("hr"),
-                toc_section,
-                cls="side-menu"
+                book_info, nearby_section, ft_hx("hr"), toc_section, cls="side-menu"
             )
 
             # -----------------------------------------------
@@ -416,11 +445,13 @@ window.addEventListener('load', function(){
                     "img",
                     src=f"/assets/{item['image']}",
                     alt="Generated Image",
-                    style="max-width:100%; margin-bottom:1em;"
+                    style="max-width:100%; margin-bottom:1em;",
                 )
 
             text_markdown = Div(NotStr(item["text_md"]), cls="markdown marked")
-            audio_player = ft_hx("audio", controls=True, autoplay=True, src=f"/assets/{item['audio']}")
+            audio_player = ft_hx(
+                "audio", controls=True, autoplay=True, src=f"/assets/{item['audio']}"
+            )
             nav_links = self._create_navigation(idx)
             navigation = Div(*nav_links, cls="nav")
 
@@ -429,26 +460,24 @@ window.addEventListener('load', function(){
                 text_markdown,
                 audio_player,
                 navigation,
-                cls="main-content"
+                cls="main-content",
             )
 
             layout_div = Div(side_menu, main_content, cls="layout")
 
             header_div = Div(
-                Div('AudiobookNhaLam', cls="logo"),
+                Div("AudiobookNhaLam", cls="logo"),
                 # Div(
                 #     Button("Light", onclick="setTheme('light');"),
                 #     Button("Dark", onclick="setTheme('dark');"),
                 #     Button("Auto", onclick="setTheme('auto');"),
                 #     cls="theme-toggle"
                 # ),
-                cls="header"
+                cls="header",
             )
 
             return Titled(
-                f"Page {idx+1} of {len(self.audio_book.items)}",
-                header_div,
-                layout_div
+                f"Page {idx+1} of {len(self.audio_book.items)}", header_div, layout_div
             )
 
     def _create_navigation(self, idx):
