@@ -4,7 +4,7 @@ from loguru import logger
 from speedy_utils import flatten_list, multi_thread
 
 
-def chunk_into_pages(text):
+def chunk_into_pages(text, page_range:tuple[int, int] = None):
     """
     Splits the input text into pages using HTML span page markers.
 
@@ -26,38 +26,74 @@ def chunk_into_pages(text):
 
     # Remove any empty or whitespace-only pages
     pages = [page.strip() for page in pages if page.strip()]
-    pages = repartition(pages)
-    return pages
+    if page_range:
+        start, end = page_range
+        pages = pages[start:end]
+    return repartition(pages)
 
 
 from .chatgpt_format_text import split_text
 
 
-def repartition(pages, word_per_page=300):
-    def word_count(text):
-        return len(text.split())
+def word_count(text):
+    return len(text.split())
 
-    logger.info("Repartitioning pages...")
-    mid_word_len = word_per_page
-    logger.info(f"Calculated median length: {mid_word_len}")
 
-    # for page in pages:
-    def get_chunks(page):
-        num_page = word_count(page) / mid_word_len
-        if num_page > 1.5:
-            target_num_chunks = int(num_page) + 1
-            output_chunks = split_text(
-                long_text=page, target_num_chunks=target_num_chunks
-            ).output_chunks
+def split_long_page(page, target_wc):
+    wc = word_count(page)
+    pages = []
+    while wc > target_wc:
+        split_point = target_wc
+        proposed_page = page[:split_point]
+        # find the last newline before the split point
+        new_split_point = proposed_page.rfind(".")
+        proposed_page = page[:new_split_point]
+        pages.append(proposed_page)
+        page = page[new_split_point:]
+        wc = word_count(page)
+    pages.append(page)
+    return pages
+
+
+def repartition(pages, target_input_each=3000):
+
+    inputs = []
+    current_input = ""
+    for page in pages:
+        if word_count(current_input) + word_count(page) < target_input_each:
+            current_input += page
         else:
-            output_chunks = [page]
-        return output_chunks
-        # new_pages.extend(output_chunks)
+            if len(current_input) > 0:
+                inputs.append(current_input)
+            current_input = page
+    if len(current_input) > 0:
+        inputs.append(current_input)
 
-    logger.info("Splitting pages...")
-    list_chunks = multi_thread(
-        get_chunks, pages, 128, desc="Splitting pages", verbose=True
+    new_inputs = []
+    for i in inputs:
+        if word_count(i) > target_input_each * 1.5:
+            new_inputs.extend(split_long_page(i, target_input_each))
+        else:
+            new_inputs.append(i)
+    inputs = new_inputs
+
+    for i in inputs:
+        print(word_count(i))
+
+    run_outputs = multi_thread(
+        lambda s: split_text(long_text=s, max_tokens=4000),
+        inputs,
+        desc="Splitting pages into chunks",
+        workers=100,
+        verbose=True,
     )
-    ret = flatten_list(list_chunks)
-    logger.info("Finished repartitioning pages. Total pages: {}".format(len(ret)))
-    return ret
+    outputs = []
+    for run_output in run_outputs:
+        outputs.extend(run_output.output_chunks)
+    for i, out in enumerate(outputs):
+        out = out.model_dump()
+        out["text_md"] = out["text"]
+        out['page_title'] = out['title']
+        outputs[i] = out
+
+    return outputs

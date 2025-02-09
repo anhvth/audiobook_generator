@@ -67,17 +67,9 @@ def main():
     num_pages = len(audio_book.items)
     print(f"Found {num_pages} page(s) to export.")
 
-    # For each page route, fetch HTML and post-process links so they work as static files.
-    def is_in_range(page_range, idx):
-        if not page_range:
-            return True
 
-        return page_range[0] <= idx < page_range[1]
 
     for idx in range(num_pages):
-        if not is_in_range(args.page_range, idx):
-            continue
-
         route = f"/{idx}"
         response = client.get(route)
         html = response.text
@@ -99,14 +91,27 @@ def main():
             f.write(html)
         print(f"Written {file_path}")
 
-    # Copy the assets directory (audio files and any generated images) to the export folder.
+    # Copy only related asset files referenced in exported pages.
     assets_src = audio_book.assets_dir
     assets_dest = output_dir / "assets"
     if assets_src.exists():
-        if assets_dest.exists():
-            shutil.rmtree(assets_dest)
-        shutil.copytree(assets_src, assets_dest)
-        print(f"Copied assets from {assets_src} to {assets_dest}")
+        assets_dest.mkdir(exist_ok=True)
+        for idx in range(num_pages):
+
+            #     continue
+            item = audio_book.items[idx]
+            for key in ("audio", "image"):
+                if key in item:
+                    asset_file = item.get(key)
+                    
+                    if not asset_file:
+                        continue
+                    src_path = assets_src / asset_file
+                    if src_path.exists():
+                        shutil.copy2(src_path, assets_dest / asset_file)
+                        print(f"Copied {key} asset for page {idx} from {src_path} to {assets_dest / asset_file}")
+                    else:
+                        print(f"{key.capitalize()} asset file {src_path} not found.")
     else:
         print("No assets directory found to copy.")
 

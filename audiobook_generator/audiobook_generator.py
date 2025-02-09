@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 # --- For text processing and TTS
 from audiobook_generator.chatgpt_format_text import (
+    ChunkFormat,
     raw_text_to_paragraphs,
     md_formated_llm,
     text_improver,
@@ -41,22 +42,10 @@ class AudioBookGenerator:
         # Create assets directory if it doesn't exist
         self.assets_dir.mkdir(exist_ok=True)
 
-        # Format the text as markdown for each item
-        if to_md:
-            for item in self.items:
-                item["text_md"] = md_formated_llm(raw_text=item["text"]).markdown
-        else:
-            for item in self.items:
-                item["text_md"] = item["text"]
-
     @classmethod
     def from_large_md(cls, md_file, page_rage):
         file = open(md_file, "r")
-        pages: List[str] = chunk_into_pages(file.read())
-        items = [{"text": p} for p in pages]
-        if page_rage:
-            items = items[page_rage[0] : page_rage[1]]
-
+        items: List[Dict] = chunk_into_pages(file.read(), page_rage)
         logger.info(f"Loaded {len(items)} pages from {md_file}")
         return cls(items, assets_dir="assets", with_image=False, to_md=False)
 

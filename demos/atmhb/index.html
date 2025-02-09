@@ -1,0 +1,310 @@
+ <!doctype html>
+ <html>
+   <head>
+     <title>Page 1 of 10</title>
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script><script src="https://cdn.jsdelivr.net/gh/answerdotai/fasthtml-js@1.0.12/fasthtml.js"></script><script src="https://cdn.jsdelivr.net/gh/answerdotai/surreal@main/surreal.js"></script><script src="https://cdn.jsdelivr.net/gh/gnat/css-scope-inline@main/script.js"></script>     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css">
+     <style>:root { --pico-font-size: 100%; }</style>
+<script type="module">import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+proc_htmx('.marked', e => e.innerHTML = marked.parse(e.textContent));</script>     <style>
+/* ----- Theme Variables ----- */
+/* Default (Light) Theme */
+:root {
+    --bg-color: #f9f9f9;
+    --text-color: #333333;
+    --header-bg: linear-gradient(90deg, #4a90e2, #9013fe);
+    --header-text: #ffffff;
+    --container-bg: #ffffff;
+    --link-primary-bg: #4a90e2;
+    --link-primary-text: #ffffff;
+    --link-secondary-bg: #cccccc;
+    --link-secondary-text: #333333;
+}
+
+/* Dark Theme Overrides */
+body.dark {
+    --bg-color: #1e1e1e;
+    --text-color: #dddddd;
+    --header-bg: linear-gradient(90deg, #222222, #555555);
+    --header-text: #ffffff;
+    --container-bg: #2e2e2e;
+    --link-primary-bg: #009688;
+    --link-primary-text: #ffffff;
+    --link-secondary-bg: #444444;
+    --link-secondary-text: #dddddd;
+}
+
+/* ----- Global Styles ----- */
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header with Theme Toggle */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em;
+    background: var(--header-bg);
+    color: var(--header-text);
+}
+.header .logo {
+    font-size: 1.8em;
+    font-weight: bold;
+}
+.theme-toggle {
+    display: flex;
+    gap: 0.5em;
+}
+.theme-toggle button {
+    background: transparent;
+    border: 1px solid var(--header-text);
+    color: var(--header-text);
+    padding: 0.3em 0.6em;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.theme-toggle button.active {
+    background: var(--header-text);
+    color: var(--header-bg);
+}
+
+/* Layout container: side menu + main content */
+.layout {
+    display: flex;
+    gap: 1rem;
+    margin: 2em auto;
+    max-width: 1200px;
+    padding: 0 1em;
+}
+
+/* Side menu styling */
+.side-menu {
+    flex: 0 0 250px;
+    background: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 1em;
+    max-height: calc(100vh - 5em);
+    overflow-y: auto;
+}
+
+/* Book info in side menu */
+.book-info {
+    text-align: center;
+    margin-bottom: 1em;
+}
+.book-info h2 {
+    font-size: 1.6em;
+    margin: 0;
+}
+
+/* Nearby pages list styling */
+.chapter-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.chapter-list li {
+    margin: 0.5em 0;
+    padding: 0.3em;
+    border-radius: 4px;
+}
+.chapter-list li:hover {
+    background: var(--link-secondary-bg);
+}
+.chapter-list li.active {
+    font-weight: bold;
+    background: #5c6d70;  /* changed */
+    color: #fff5e1;       /* changed */
+}
+
+/* Headings for sections in side menu */
+.side-menu h3 {
+    font-size: 1.2em;
+    margin: 1em 0 0.5em;
+}
+
+/* Main content container with page-turn animation */
+.main-content {
+    flex: 1;
+    background: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    animation: pageTurn 0.8s ease;
+    transform-style: preserve-3d;
+    padding: 1.5em;
+}
+
+/* Page Turning Animation */
+@keyframes pageTurn {
+    from {
+        transform: perspective(600px) rotateY(90deg);
+        opacity: 0;
+    }
+    to {
+        transform: perspective(600px) rotateY(0deg);
+        opacity: 1;
+    }
+}
+
+/* Markdown Styling */
+.marked {
+    line-height: 1.6;
+    font-size: 1.1em;
+    margin-bottom: 1em;
+}
+
+/* Audio Player */
+audio {
+    display: block;
+    margin: 1em auto;
+}
+
+/* Next/Prev Navigation Buttons */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2em;
+}
+.nav a {
+    font-size: 1.1em;
+    text-decoration: none;
+    padding: 0.5em 1em;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+.nav a.secondary {
+    background: var(--link-secondary-bg);
+    color: var(--link-secondary-text);
+}
+.nav a.primary {
+    background: var(--link-primary-bg);
+    color: var(--link-primary-text);
+}
+.nav a:hover {
+    opacity: 0.8;
+}
+
+/* ----- Theme Toggle Script ----- */
+                    </style>
+<script>
+function setTheme(theme) {
+    if (theme === 'auto') {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.className = 'dark';
+        } else {
+            document.body.className = 'light';
+        }
+    } else {
+        document.body.className = theme;
+    }
+    localStorage.setItem('theme', theme);
+    updateThemeToggle(theme);
+}
+function updateThemeToggle(theme) {
+    var buttons = document.querySelectorAll('.theme-toggle button');
+    buttons.forEach(function(btn) {
+         if (btn.textContent.toLowerCase() === theme) {
+              btn.classList.add('active');
+         } else {
+              btn.classList.remove('active');
+         }
+    });
+}
+
+// Add keyboard navigation and volume control
+document.addEventListener('keydown', function(e) {
+    const audio = document.querySelector('audio');
+    
+    switch(e.key) {
+        case 'ArrowRight':
+        case ' ':  // spacebar
+            const nextBtn = document.querySelector('.nav a.primary');
+            if (nextBtn) nextBtn.click();
+            break;
+            
+        case 'ArrowLeft':
+            const prevBtn = document.querySelector('.nav a.secondary');
+            if (prevBtn) prevBtn.click();
+            break;
+            
+        case 'ArrowUp':
+            if (audio) {
+                audio.volume = Math.min(1, audio.volume + 0.1);
+                e.preventDefault();
+            }
+            break;
+            
+        case 'ArrowDown':
+            if (audio) {
+                audio.volume = Math.max(0, audio.volume - 0.1);
+                e.preventDefault();
+            }
+            break;
+    }
+});
+
+window.addEventListener('load', function(){
+    var storedTheme = localStorage.getItem('theme') || 'auto';
+    setTheme(storedTheme);
+    
+    // Add page turn animation class when navigating
+    document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.getAttribute('href');
+            document.querySelector('.main-content').style.animation = 'pageTurn 0.8s ease';
+            setTimeout(() => {
+                window.location.href = href;
+            }, 400);
+        });
+    });
+});
+                    </script>   </head>
+   <body>
+<main class="container">       <h1>Page 1 of 10</h1>
+       <div class="header">
+         <div class="logo">AudiobookNhaLam</div>
+       </div>
+       <div class="layout">
+         <div class="side-menu">
+           <div class="book-info">
+             <h2 style="margin:0;">Atomic Habit</h2>
+<hr>           </div>
+           <div>
+             <h3>Nearby Pages</h3>
+             <ul class="chapter-list">
+               <li class="active">
+<a href="index.html">Untitled (Page 1)</a>               </li>
+               <li>
+<a href="1.html">Untitled (Page 2)</a>               </li>
+               <li>
+<a href="2.html">Untitled (Page 3)</a>               </li>
+               <li>
+<a href="3.html">Untitled (Page 4)</a>               </li>
+               <li>
+<a href="4.html">Untitled (Page 5)</a>               </li>
+               <li>
+<a href="5.html">Untitled (Page 6)</a>               </li>
+             </ul>
+           </div>
+<hr>           <div>
+             <h3>Contents</h3>
+             <div>No headings found.</div>
+           </div>
+         </div>
+         <div class="main-content">
+           <div></div>
+           <div class="markdown marked">The difference a tiny improvement can make over time is astounding. Here's how the math works out: if you can get 1 percent better each day for one year, you'll end up thirty-seven times better by the time you're done. Conversely, if you get 1 percent worse each day for one year, you'll decline nearly down to zero. What starts as a small win or a minor setback accumulates into something much more. Habits are the compound interest of self-improvement. The same way that money multiplies through compound interest, the effects of your habits multiply as you repeat them. They seem to make little difference on any given day and yet the impact they deliver over the months and years can be enormous. It is only when looking back two, five, or perhaps ten years later that the value of good habits and the cost of bad ones becomes strikingly apparent.</div>
+<audio controls autoplay src="assets/a5a7447ac2eb68a2.wav"></audio>           <div class="nav">
+<a href="1.html" class="primary">Next ⟶</a>           </div>
+         </div>
+       </div>
+</main>   </body>
+ </html>

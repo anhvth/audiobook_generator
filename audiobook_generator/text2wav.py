@@ -104,10 +104,6 @@ class TextToSpeech:
         sf.write(str(output_path), final_audio, self.config.SAMPLE_RATE)
         if format == "mp3":
             wav_to_mp3(str(output_path), str(output_path.with_suffix(".mp3")))
-
-        else:
-            raise ValueError(f"Unsupported format: {format}")
-
         return f"{id}.{format}"
 
     def initialize_pipeline(self):

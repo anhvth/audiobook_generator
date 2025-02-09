@@ -87,20 +87,48 @@ text_improver = dspy.Predict(ImproveTranscript)
 
 
 # --- Split text
+
+from typing import List, Optional
+from pydantic import Field
+
+
+class ChunkFormat(BaseModel):
+
+    title: str = Field(description="The title of the chunk.")
+    text: str = Field(description="The formated text. Should be 300-500 words for optimal TTS processing.")
+
+
 class SplitText(dspy.Signature):
     """
-    Split a long piece of text into a specified number of roughly equal-sized chunks.
-    
-    The splitting process:
-    - Preserves complete sentences and paragraphs where possible
-    - Maintains all original formatting (markdown, lists, etc.)
-    - Avoids splitting in the middle of words or formatting markers
-    - Ensures each chunk is coherent and readable
+    Split multiple pages into chunks optimized for audio narration.
+    Rules:
+        - Each chunk should be 300-500 words for optimal TTS processing
+        - Keep titles with their related paragraphs in the same chunk
+        - Preserve natural paragraph breaks and semantic units
+        - Never split sentences in the middle
+        - Keep hierarchical structure (title -> subtitles -> content)
+        - If a section is longer than 500 words, split at the most logical break point
+        - If a section is shorter than 300 words, combine with adjacent related content
+        - Maintain the original meaning and context of the content
+        - Do not alter, remove or add any content - only restructure.
+        - Remove metadata like page numbers, headers, footers, and other non-essential text
+        - The output chunks together must cover the entire input text
+    Here is how example output should look like:
+    ```
+    [
+        {
+            "title": "Chapter 1: The Beginning",
+            "text": "This is the first paragraph of the chapter. This is the second paragraph of the chapter."
+        },
+        {
+            "title": "Chapter 2: The Middle",
+            "text": "This is the first paragraph of the chapter. This is the second paragraph of the chapter."
+        }
+    ]
     """
 
     long_text: str = dspy.InputField()
-    target_num_chunks: int = dspy.InputField()
-    output_chunks: list[str] = dspy.OutputField()
+    output_chunks: List[ChunkFormat] = dspy.OutputField()
 
 
 split_text = dspy.Predict(SplitText)

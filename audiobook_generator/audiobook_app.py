@@ -435,13 +435,13 @@ window.addEventListener('load', function(){
             layout_div = Div(side_menu, main_content, cls="layout")
 
             header_div = Div(
-                Div(self.book_name, cls="logo"),
-                Div(
-                    Button("Light", onclick="setTheme('light');"),
-                    Button("Dark", onclick="setTheme('dark');"),
-                    Button("Auto", onclick="setTheme('auto');"),
-                    cls="theme-toggle"
-                ),
+                Div('AudiobookNhaLam', cls="logo"),
+                # Div(
+                #     Button("Light", onclick="setTheme('light');"),
+                #     Button("Dark", onclick="setTheme('dark');"),
+                #     Button("Auto", onclick="setTheme('auto');"),
+                #     cls="theme-toggle"
+                # ),
                 cls="header"
             )
 
