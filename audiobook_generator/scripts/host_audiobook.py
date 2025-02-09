@@ -4,6 +4,7 @@ from audiobook_generator.audiobook_app import AudioBookApp
 from audiobook_generator.audiobook_generator import AudioBookGenerator
 import uvicorn
 
+
 def main():
     parser = argparse.ArgumentParser(description="Host AudioBook as a dynamic website")
     parser.add_argument("input_file", type=str, help="Path to the input text file")
@@ -27,11 +28,16 @@ def main():
         action="store_true",
         help="Use LLM to improve transcript by removing redundant markers",
     )
+    parser.add_argument(
+        "--page_rage", nargs=2, type=int, help="Range of pages to export"
+    )
     args = parser.parse_args()
 
     # Instantiate and prepare the audiobook based on input file type
     if args.input_file.endswith(".md"):
-        audio_book = AudioBookGenerator.from_large_md(args.input_file, page_rage=None)
+        audio_book = AudioBookGenerator.from_large_md(
+            args.input_file, page_rage=args.page_rage
+        )
     else:
         audio_book = AudioBookGenerator.from_txt(args.input_file)
     if args.improve_transcript:
@@ -45,6 +51,7 @@ def main():
 
     # Run the app using Uvicorn on the specified host and port
     uvicorn.run(audio_book_app.app, host="0.0.0.0", port=args.port)
+
 
 if __name__ == "__main__":
     main()

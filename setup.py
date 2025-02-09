@@ -27,6 +27,7 @@ setup(
     entry_points={
         "console_scripts": [
             "export_audiobook=audiobook_generator.scripts.export_audiobook:main",
+            "host_audiobook=audiobook_generator.scripts.host_audiobook:main",
         ],
     },
 )
