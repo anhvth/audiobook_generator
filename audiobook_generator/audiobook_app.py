@@ -57,7 +57,7 @@ class AudioBookApp:
                 if i > 0:
                     item["page_title"] = self.audio_book.items[i - 1]["page_title"]
                 else:
-                    item["page_title"] = "Untitled"
+                    item["page_title"] = ""
 
         # Now build the FastHTML app with updated CSS styles
         self.app, self.rt = fast_app(

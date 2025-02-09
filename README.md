@@ -27,3 +27,8 @@ fi
 export_audiobook "$mdfile" $OUTPUT_DIR --book_name="Atomic Habit" -i
 cp -r output/full/atomic-hatbits/*.jpeg output/full/
 ```
+
+
+
+## Hosting
+`host_audiobook ./output/full/atomic-hatbits/atomic-hatbits.md  --book_name="Atomic Habit"`
